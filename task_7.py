@@ -1,8 +1,9 @@
-import re
+from validate_email import validate_email
+from password_validator import PasswordValidator
 
 
 def check_mail(mail, dict_white_black, consent):
-    if re.fullmatch(r"[\da-zA-Z]+@[\da-zA-Z]+[.][\da-zA-Z]+", mail):
+    if validate_email(mail):
         if mail in dict_white_black['white']:
             print("Your mail in white list.")
             if consent == 'white':
@@ -19,24 +20,16 @@ def check_mail(mail, dict_white_black, consent):
         return False
 
 
-def check_password(password):
-    if re.search(r"\s", password):
-        print("The password must not be any non-displayable symbols.")
-        return False
-    elif len(password) < 8:
-        print("The password length must be at least 8.")
-        return False
-    elif len(re.findall(r"\d", password)) < 3 or \
-            len(re.findall(r"[a-zA-Z]", password)) < 3 or \
-            len(re.findall(r"[\W_]", password)) < 1:
-        print("The password must be at least 3 digits, 3 letters, 1 symbol.")
-        return False
-    return True
-
-
 vault = {'white': ['good@good.good', 'notbad@notbad.notbad'],
          'black': ['penis@penis.penis', 'bad@bad.bad']}
 vault_user = {}
+schema = PasswordValidator()
+schema\
+    .min(8)\
+    .has().digits()\
+    .has().letters()\
+    .has().symbols()\
+    .has().no().spaces()
 while True:
     answer_user = input("Use white and black lists? (yes/no/debug/exit)\n")
     if answer_user == 'exit':
@@ -67,7 +60,9 @@ while True:
     if check_mail(mail_user, vault, answer_user):
         while True:
             password_user = input("Please enter your password: ")
-            if check_password(password_user):
+            if schema.validate(password_user):
                 vault_user[mail_user] = password_user
                 print("Your mail is registered.")
                 break
+            else:
+                print("Your password doesn't match pattern.")
